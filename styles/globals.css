@@ -1,0 +1,26 @@
+/* @tailwind base; */
+@import 'antd/dist/reset.css';
+@tailwind components;
+@tailwind utilities;
+
+.ant-form-item-label label {
+  width: 100%;
+}
+
+body {
+  @apply dark:bg-gray-900;
+}
+
+.sketch-picker {
+  min-width: 256px !important;
+  @apply dark:text-white p-0 border-none bg-transparent !important;
+  & input {
+    @apply dark:text-white dark:bg-gray-800 outline-none rounded !important;
+  }
+  & label {
+    @apply dark:text-white !important;
+  }
+}
+.sketch-picker input {
+  @apply dark:text-white dark:bg-gray-800 !important;
+}

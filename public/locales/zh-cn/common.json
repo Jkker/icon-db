@@ -1,0 +1,20 @@
+{
+  "Search Icon": "搜索图标",
+  "All Icons Sets": "全部图标库",
+  "Select All": "全选",
+  "No icons found": "没有找到图标",
+  "Failed": "失败",
+  "OK": "确定",
+  "Copy": "复制",
+  "Copied": "已复制",
+  "Download": "下载",
+  "Downloaded": "已下载",
+  "Name": "名称",
+  "SVG": "SVG",
+  "React Component": "React 组件",
+  "React Import": "React 导入",
+  "Vue Component": "Vue 组件",
+  "Svelte Component": "Svelte 组件",
+  "Data URI": "Data URI",
+  "PNG": "PNG"
+}
