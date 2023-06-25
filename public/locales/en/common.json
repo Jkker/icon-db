@@ -20,17 +20,5 @@
   "Shadow": "Shadow",
   "Opacity": "Opacity",
   "Style": "Style",
-  "Margin": "Margin",
-  "CopySVG": "Copy SVG",
-  "CopyReactComponent": "Copy React Component",
-  "CopyReactImport": "Copy React Import",
-  "CopyName": "Copy Name",
-  "CopyDataURI": "Copy Data URI",
-  "CopyPNG": "Copy PNG",
-  "DownloadPNG": "Download PNG",
-  "DownloadSVG": "Download SVG",
-  "DownloadReact": "Download React",
-  "DownloadVue": "Download Vue Component",
-  "DownloadSvelte": "Download Svelte Component",
-  "DownloadICO": "Download ICO"
+  "Margin": "Margin"
 }

@@ -23,9 +23,9 @@ function App({ Component, pageProps }: AppProps) {
         algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
       }}
     >
-      {/* <AntApp> */}
-      <Component {...pageProps} />
-      {/* </AntApp> */}
+      <AntApp>
+        <Component {...pageProps} />
+      </AntApp>
     </ConfigProvider>
   );
 }

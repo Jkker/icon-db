@@ -11,10 +11,12 @@
   "Downloaded": "已下载",
   "Name": "名称",
   "SVG": "SVG",
-  "React Component": "React 组件",
-  "React Import": "React 导入",
+  "PNG": "PNG",
+  "JPG": "JPG",
+  "React Component (JSX)": "React 组件 (JSX)",
+  "React Component (TSX)": "React 组件 (TSX)",
+  "Import": "导入",
   "Vue Component": "Vue 组件",
   "Svelte Component": "Svelte 组件",
-  "Data URI": "Data URI",
-  "PNG": "PNG"
+  "Data URI": "Data URI"
 }

@@ -1,43 +1,30 @@
-import {
-  Checkbox,
-  Dropdown,
-  Form,
-  FormInstance,
-  InputNumber,
-  Layout,
-} from 'antd';
+import { App, Dropdown, Form, FormInstance, InputNumber } from 'antd';
 import { useTranslation } from 'next-i18next';
 import React, { createElement, SVGFactory, useState } from 'react';
 import { FaUser } from 'react-icons/fa';
 import { IoMdResize } from 'react-icons/io';
-import { IoColorPalette, IoColorPaletteOutline } from 'react-icons/io5';
+import { IoColorPaletteOutline } from 'react-icons/io5';
 import {
   TbBorderRadius,
   TbBoxMargin,
   TbBoxPadding,
   TbTextResize,
 } from 'react-icons/tb';
-import { copySVGasPNG, svgToDataURI, svgToPNGBlob } from 'utils/svg';
+import {
+  copySVGasImage,
+  svgToDataURI,
+  svgToReactComponent,
+  svgToCanvas,
+  svgToIco,
+} from 'utils/svg';
 import { getFirstCapitalizedWord } from 'utils/text';
 import { ColorInputItem } from './ColorInput';
 import TransparentGrid from './TransparentGrid';
-import cx from 'classnames';
+import { DraggableNumberInput } from './DraggableNumberInput';
 
-const { Header: header, Footer, Sider, Content } = Layout;
 const Item = Form.Item;
 
 const DEBUG = true;
-
-interface IconProps {
-  name: string;
-  // url: string;
-  color: string;
-  background?: string;
-  margin: string;
-  padding: string;
-  size: string;
-  strokeWidth: string;
-}
 
 const defaultProps = {
   color: '#000000',
@@ -49,20 +36,24 @@ const defaultProps = {
 };
 
 const COPY = {
-  Name: 'Name',
-  ReactImport: 'React Import',
-  DataURI: 'Data URI',
   SVG: 'SVG',
+  Name: 'Name',
+  Import: 'Import',
+  JSX: 'JSX',
+  TSX: 'TSX',
+  DataURI: 'Data URI',
   PNG: 'PNG',
 } as const;
 
 const DOWNLOAD = {
   SVG: 'SVG',
   PNG: 'PNG',
+  JPG: 'JPG',
   ICO: 'ICO',
-  React: 'React Component',
-  Vue: 'Vue Component',
-  Svelte: 'Svelte Component',
+  ReactComponent: 'React Component (JSX)',
+  ReactComponentTS: 'React Component (TSX)',
+  // VueComponent: 'Vue Component',
+  // SvelteComponent: 'Svelte Component',
 } as const;
 
 const IconRenderer = ({
@@ -111,7 +102,7 @@ const IconRenderer = ({
       className="min-h-full flex-1 flex text-black overflow-hidden relative m-8 bg-white justify-center items-center"
       id="icon-renderer"
     >
-      <style>{`svg {height: ${svgSize}; width: ${svgSize};}`}</style>
+      <style>{`#svg-container svg {height: ${svgSize}; width: ${svgSize};}`}</style>
       <TransparentGrid className="absolute z-0" />
       <div
         id="svg-container"
@@ -127,6 +118,7 @@ const IconRenderer = ({
 };
 
 const Details = ({ name = 'FaUser', svg = FaUser as SVGFactory }) => {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
 
   const [bgEnabled, setBgEnabled] = useState(false);
@@ -159,30 +151,35 @@ const Details = ({ name = 'FaUser', svg = FaUser as SVGFactory }) => {
         text = name;
         break;
       }
-      case COPY.ReactImport: {
+      case COPY.Import: {
         text = `import { ${name} } from "react-icons/${getFirstCapitalizedWord(
           name
         )}";`;
         break;
       }
       case COPY.PNG: {
-        try {
-          await copySVGasPNG(svgStr, form.getFieldValue('size'));
-          return;
-        } catch (err) {
-          console.error(err);
-          // message.error(t(`Copy failed`));
-        }
+        await copySVGasImage(svgStr, form.getFieldValue('size'));
+      }
+      case COPY.JSX: {
+        text = await svgToReactComponent(svgStr, name);
+        break;
+      }
+      case COPY.TSX: {
+        text = await svgToReactComponent(svgStr, name, {
+          typescript: true,
+        });
+        break;
       }
     }
 
     try {
-      await navigator.clipboard.writeText(text);
-      console.log('Copied', type, text);
-      // message.success(t('Copied') + ' ' + t(type));
+      if (text) {
+        await navigator.clipboard.writeText(text);
+      }
+      message.success(t('Copied') + ' ' + t(type));
     } catch (err) {
       console.error(err);
-      // message.error(t(`Copy failed`));
+      message.error(t(`Copy failed`));
     }
   };
 
@@ -192,29 +189,89 @@ const Details = ({ name = 'FaUser', svg = FaUser as SVGFactory }) => {
     const size = form.getFieldValue('size');
 
     let objectUrl;
-
     let filename = name;
-    switch (type) {
-      case DOWNLOAD.SVG: {
-        link.href = svgToDataURI(svgStr);
-        filename += '.svg';
-        break;
-      }
-      case DOWNLOAD.PNG: {
-        const pngBlob = await svgToPNGBlob(svgStr, size);
-        objectUrl = URL.createObjectURL(pngBlob);
-        link.href = objectUrl;
-        filename += '.png';
-        break;
-      }
-      case DOWNLOAD.ICO: {
-      }
-    }
 
-    link.download = filename;
-    link.click();
-    if (objectUrl) {
-      URL.revokeObjectURL(objectUrl);
+    message.open({
+      content: t('Downloading') + ' ' + t(type),
+      key: 'download',
+      duration: 0,
+      type: 'loading',
+    });
+
+    try {
+      switch (type) {
+        case DOWNLOAD.SVG: {
+          link.href = svgToDataURI(svgStr);
+          filename += '.svg';
+          break;
+        }
+        case DOWNLOAD.PNG: {
+          const canvas = await svgToCanvas(svgStr, { size });
+          objectUrl = canvas.toDataURL('image/png');
+          link.href = objectUrl;
+          filename += '.png';
+          break;
+        }
+        case DOWNLOAD.JPG: {
+          const canvas = await svgToCanvas(svgStr, {
+            size,
+            backgroundColor: 'white',
+          });
+          objectUrl = canvas.toDataURL('image/jpeg');
+          link.href = objectUrl;
+          filename += '.jpg';
+          break;
+        }
+        // TODO: DOWNLOAD.ICO:
+        // https://jsfiddle.net/vanowm/b657yksg/
+        case DOWNLOAD.ICO: {
+          objectUrl = await svgToIco(svgStr);
+          link.href = objectUrl;
+          filename += '.ico';
+          break;
+        }
+
+        case DOWNLOAD.ReactComponent: {
+          const component = await svgToReactComponent(svgStr, name, {
+            importRuntime: true,
+          });
+          link.href =
+            'data:text/plain;charset=utf-8,' + encodeURIComponent(component);
+          filename += '.jsx';
+          break;
+        }
+        case DOWNLOAD.ReactComponentTS: {
+          const component = await svgToReactComponent(svgStr, name, {
+            typescript: true,
+            importRuntime: true,
+          });
+          link.href =
+            'data:text/plain;charset=utf-8,' + encodeURIComponent(component);
+          filename += '.tsx';
+          break;
+        }
+        // case DOWNLOAD.VueComponent: {
+        //   const component = await svgToVueComponent(svgStr, name);
+        // }
+      }
+
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      message.open({
+        content: t('Downloaded') + ' ' + filename,
+        key: 'download',
+        duration: 2,
+        type: 'success',
+      });
+    } catch (err) {
+      console.error(err);
+      message.error(t(`Download failed`));
     }
   };
 
@@ -242,8 +299,13 @@ const Details = ({ name = 'FaUser', svg = FaUser as SVGFactory }) => {
               <IoColorPaletteOutline />
               {t('Background')}
             </ColorInputItem>
-
-            <Item
+            {/* <DraggableNumberInputItem
+              name="radius"
+              icon={<TbBorderRadius />}
+              label={t('Radius')}
+              addonAfter="px"
+            /> */}
+            {/* <Item
               label={
                 <div className="flex items-center gap-2">
                   <TbBorderRadius />
@@ -258,7 +320,13 @@ const Details = ({ name = 'FaUser', svg = FaUser as SVGFactory }) => {
                 step={4}
                 min={0}
               />
-            </Item>
+            </Item> */}
+            {/* <DraggableNumberInputItem
+              name="size"
+              icon={<IoMdResize />}
+              label={t('Size')}
+              addonAfter="px"
+            /> */}
             <Item
               label={
                 <div className="flex items-center gap-2">
@@ -268,10 +336,9 @@ const Details = ({ name = 'FaUser', svg = FaUser as SVGFactory }) => {
               }
               name="size"
             >
-              <InputNumber
-                prefix={<TbTextResize />}
+              <DraggableNumberInput
+                // prefix={<TbTextResize />}
                 addonAfter="px"
-                step={4}
                 min={0}
               />
             </Item>
